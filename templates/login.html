@@ -17,7 +17,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #014AAD 0%, #0163E8 50%, #0176FF 100%);
+            background: #E6F0FF;
             padding: 2rem;
         }
 
@@ -25,20 +25,18 @@
             position: fixed;
             top: 20px;
             left: 20px;
-            color: white;
-            font-size: 1.5rem;
-            font-weight: bold;
+            width: 180px;
+            height: auto;
             z-index: 1000;
         }
 
         .login-container {
-            background: rgba(255, 255, 255, 0.95);
+            background: #014AAD;
             padding: 3.5rem;
-            border-radius: 20px;
+            border-radius: 25px;
             box-shadow: 0 8px 32px rgba(1, 74, 173, 0.2);
-            width: 100%;
-            max-width: 600px;
-            min-height: 500px;
+            width: 650px;
+            height: 650px;
             backdrop-filter: blur(10px);
             transform: translateY(0);
             transition: all 0.3s ease;
@@ -53,109 +51,350 @@
         }
 
         h2 {
-            color: #014AAD;
-            font-size: 2.5rem;
+            color: white;
+            font-size: 2.8rem;
             text-align: center;
-            margin-bottom: 3rem;
+            margin-bottom: 3.5rem;
             font-weight: 600;
         }
 
         .form-group {
-            margin-bottom: 2rem;
+            margin-bottom: 2.5rem;
             position: relative;
         }
 
         .form-group input {
             width: 100%;
-            padding: 1rem 1.25rem;
-            border: 2px solid #e5e7eb;
-            border-radius: 10px;
-            font-size: 1.1rem;
+            padding: 1.25rem 1.5rem;
+            border: 2px solid #ffffff;
+            border-radius: 12px;
+            font-size: 1.2rem;
             transition: all 0.2s ease;
-            background: white;
+            background: #E6F0FF;
             color: #333;
         }
 
         .form-group input:focus {
             outline: none;
-            border-color: #014AAD;
-            box-shadow: 0 0 0 3px rgba(1, 74, 173, 0.1);
+            border-color: #0163E8;
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
         }
 
         .form-group span {
             position: absolute;
-            left: 1.25rem;
+            left: 1.5rem;
             top: 50%;
             transform: translateY(-50%);
-            color: #9ca3af;
+            color: #014AAD;
             transition: all 0.2s ease;
             pointer-events: none;
-            font-size: 1.1rem;
-            background: white;
+            font-size: 1.2rem;
+            background: #E6F0FF;
             padding: 0 0.25rem;
         }
 
         .form-group input:focus + span,
         .form-group input:not(:placeholder-shown) + span {
             top: 0;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             color: #014AAD;
+        }
+
+        .options-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: -1.5rem;
+            margin-bottom: 1.5rem;
+            padding: 0 0.5rem 0 0; /* Rimosso
+
+        .stay-connected {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem; /* Aumentato spazio tra checkbox e testo */
+            color: white;
+            font-size: 0.9rem;
+            opacity: 0.9;
+            transition: opacity 0.2s ease;
+        }
+
+        .stay-connected:hover {
+            opacity: 1;
+        }
+
+        .stay-connected input[type="checkbox"] {
+            width: 18px;  /* Leggermente più grande */
+            height: 18px;
+            background: #E6F0FF;
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            border-radius: 4px;
+            appearance: none;
+            -webkit-appearance: none;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .stay-connected input[type="checkbox"]:checked {
+            background: #E6F0FF;
+            border-color: #E6F0FF;
+        }
+
+        .stay-connected input[type="checkbox"]:checked::after {
+            content: '✓';
+            position: absolute;
+            color: #014AAD;
+            font-size: 14px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .forgot-password {
+            color: white;
+            text-decoration: none;
+            font-size: 0.9rem;
+            opacity: 0.9;
+            transition: opacity 0.2s ease;
+        }
+
+        .forgot-password:hover {
+            opacity: 1;
+            text-decoration: underline;
         }
 
         button {
             width: 100%;
-            padding: 1.125rem;
-            background: #014AAD;
-            color: white;
+            padding: 1.25rem;
+            background: #E6F0FF;
+            color: #014AAD;
             border: none;
-            border-radius: 10px;
-            font-size: 1.1rem;
-            font-weight: 500;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
-            margin-top: 2rem;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         button:hover {
-            background: #0163E8;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(1, 74, 173, 0.2);
+            background: #f8f9fa;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(255, 255, 255, 0.2);
         }
 
         button:active {
             transform: translateY(1px);
-            box-shadow: 0 2px 6px rgba(1, 74, 173, 0.2);
+            box-shadow: 0 2px 6px rgba(255, 255, 255, 0.2);
         }
 
-        @media (max-width: 640px) {
+        /* Media Query per schermi molto grandi (4K e superiori) */
+        @media (min-width: 2560px) {
             .login-container {
+                width: 800px;
+                height: 800px;
+                padding: 4rem;
+            }
+
+            h2 {
+                font-size: 3.5rem;
+            }
+
+            .form-group input {
+                padding: 1.5rem 1.75rem;
+                font-size: 1.4rem;
+            }
+
+            button {
+                padding: 1.5rem;
+                font-size: 1.4rem;
+            }
+
+            .logo {
+                width: 250px;
+            }
+        }
+
+        /* Media Query per laptop e desktop */
+        @media (max-width: 1366px) {
+            .login-container {
+                width: 600px;
+                height: 600px;
+                padding: 3rem;
+            }
+        }
+
+        /* Media Query per tablet e iPad in modalità landscape */
+        @media (max-width: 1024px) {
+            .login-container {
+                width: 550px;
+                height: 550px;
                 padding: 2.5rem;
-                min-height: auto;
+            }
+
+            h2 {
+                font-size: 2.5rem;
+                margin-bottom: 3rem;
+            }
+
+            .logo {
+                width: 150px;
+            }
+        }
+
+        /* Media Query per tablet e iPad in modalità portrait */
+        @media (max-width: 768px) {
+            .login-container {
+                width: 90%;
+                height: auto;
+                min-height: 500px;
+                padding: 2.5rem;
+            }
+
+            .form-group {
+                margin-bottom: 1.25rem;
+            }
+
+            .options-row {
+                margin: 1.25rem 0;
+            }
+
+            button {
+                margin-top: 1.25rem;
+            }
+
+            .logo {
+                width: 130px;
+                top: 15px;
+                left: 15px;
+            }
+        }
+
+        /* Media Query per smartphone più grandi */
+        @media (max-width: 576px) {
+            .login-container {
+                width: 95%;
+                padding: 2rem;
+            }
+
+            h2 {
+                font-size: 2.2rem;
+                margin-bottom: 2.5rem;
+            }
+
+            .form-group input {
+                padding: 1rem 1.25rem;
+                font-size: 1rem;
+            }
+
+            .options-row {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+
+            button {
+                padding: 1rem;
+                font-size: 1.1rem;
+            }
+
+            .logo {
+                width: 110px;
+                top: 10px;
+                left: 10px;
+            }
+        }
+
+        /* Media Query per smartphone piccoli */
+        @media (max-width: 375px) {
+            .login-container {
+                padding: 1.5rem;
             }
 
             h2 {
                 font-size: 2rem;
+                margin-bottom: 2rem;
+            }
+
+            .form-group {
+                margin-bottom: 1rem;
+            }
+
+            .form-group input {
+                padding: 0.875rem 1rem;
+            }
+
+            .options-row {
+                margin: 1rem 0;
+            }
+
+            button {
+                margin-top: 1rem;
             }
 
             .logo {
-                width: 120px;
-                top: 10px;
-                left: 10px;
+                width: 90px;
+            }
+        }
+
+        /* Media Query per gestire l'altezza ridotta */
+        @media (max-height: 700px) {
+            .login-container {
+                height: auto;
+                min-height: 450px;
+                padding: 2rem;
+            }
+
+            h2 {
+                margin-bottom: 2rem;
+            }
+
+            .form-group {
+                margin-bottom: 1rem;
+            }
+
+            .options-row {
+                margin: 1rem 0;
+            }
+
+            button {
+                margin-top: 1rem;
+            }
+        }
+
+        /* Media Query per dispositivi con altezza molto ridotta (landscape su mobile) */
+        @media (max-height: 500px) {
+            body {
+                padding: 1rem;
+            }
+
+            .login-container {
+                min-height: auto;
+                padding: 1.5rem;
+            }
+
+            h2 {
+                font-size: 1.8rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .logo {
+                width: 80px;
+                top: 8px;
+                left: 8px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Qui puoi inserire il percorso completo dell'immagine -->
-    <img src="{{ url_for('static', filename='images/logo.png') }}" 
-         class="logo" 
-         alt="XRPolice Logo"
-         onerror="this.style.display='none'"  <!-- Nasconde l'immagine se non viene trovata -->
-    >
+    <img src="{{ url_for('static', filename='images/logo.png') }}" class="logo" alt="XRPolice Logo">
     
     <div class="login-container">
         <h2>Login</h2>
-        <form action="{{ url_for('login') }}" method="POST">
+        <form>
             <div class="form-group">
                 <input type="email" id="email" name="email" placeholder=" " required>
                 <span>Email</span>
@@ -164,15 +403,15 @@
                 <input type="password" id="password" name="password" placeholder=" " required>
                 <span>Password</span>
             </div>
+            <div class="options-row">
+                <label class="stay-connected">
+                    <input type="checkbox">
+                    Stay connected
+                </label>
+                <a href="#" class="forgot-password">Forgot password?</a>
+            </div>
             <button type="submit">Sign In</button>
         </form>
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <div class="mt-4 p-4 bg-red-100 text-red-700 rounded-lg">
-                    {{ messages[0] }}
-                </div>
-            {% endif %}
-        {% endwith %}
     </div>
 </body>
 </html>
