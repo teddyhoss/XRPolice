@@ -1,31 +1,321 @@
 <!DOCTYPE html>
-<html lang="it">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <style>
-        .dashboard-container {
-            background: white;
-            padding: 2rem;
-            border-radius: 10px;
-            text-align: center;
-        }
-        .logout-btn {
-            margin-top: 1rem;
-            background: #ff4444;
-        }
-        .logout-btn:hover {
-            background: #cc0000;
-        }
-    </style>
+    <title>XRP Forensics Dashboard</title>
+    <!-- CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <!-- Vis Network CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.6/dist/dist/vis-network.min.css" rel="stylesheet" type="text/css" />
+    <!-- Scripts -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.6/dist/vis-network.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-data/7.1.6/vis-data.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
 </head>
-<body>
-    <div class="dashboard-container">
-        <h1>Benvenuto nella Dashboard</h1>
-        <p>Hai effettuato l'accesso con successo!</p>
-        <a href="{{ url_for('logout') }}"><button class="logout-btn">Logout</button></a>
+<body class="bg-gray-100">
+    <!-- Navbar -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-semibold">XRP Forensics</span>
+                </div>
+                <div class="flex items-center">
+                    <a href="{{ url_for('logout') }}" 
+                       class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                        Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8">
+        <!-- Search Bar -->
+        <div class="mb-8 bg-white p-6 rounded-lg shadow">
+            <div class="flex gap-4">
+                <input type="text" id="addressInput" 
+                       placeholder="Enter XRP Address" 
+                       class="flex-1 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button onclick="analyzeAddress()" 
+                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded">
+                    Analyze
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="hidden">
+            <div class="flex justify-center items-center mb-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                <span class="ml-2">Analyzing...</span>
+            </div>
+        </div>
+
+        <!-- Error Message -->
+        <div id="errorMessage" class="hidden mb-8 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+        </div>
+
+        <!-- Analysis Results -->
+        <div id="resultsContainer" class="hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Transaction Network -->
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h2 class="text-xl font-semibold mb-4">Transaction Network</h2>
+                    <div id="network" class="h-96 border rounded"></div>
+                </div>
+
+                <!-- Risk Assessment -->
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h2 class="text-xl font-semibold mb-4">Risk Assessment</h2>
+                    <div id="riskScore" class="text-3xl font-bold mb-4"></div>
+                    <div id="riskFactors" class="space-y-2"></div>
+                </div>
+
+                <!-- Transaction History -->
+                <div class="bg-white p-6 rounded-lg shadow col-span-1 md:col-span-2">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold">Transaction History</h2>
+                        <button onclick="exportData()" 
+                                class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                            Export CSV
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead>
+                                <tr>
+                                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">From</th>
+                                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">To</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionList" class="bg-white divide-y divide-gray-200">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <script>
+        let currentAddress = '';
+        let network = null;
+
+        async function analyzeAddress() {
+            const address = document.getElementById('addressInput').value.trim();
+            if (!address) {
+                showError('Please enter an XRP address');
+                return;
+            }
+
+            currentAddress = address;
+            showLoading(true);
+            hideError();
+            hideResults();
+
+            try {
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ address })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                console.log('Received data:', data);
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                updateDashboard(data);
+                showResults();
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function updateDashboard(data) {
+            if (!data || typeof data !== 'object') {
+                showError('Invalid data received from server');
+                return;
+            }
+
+            // Update Risk Score
+            if (data.risk_assessment) {
+                const riskDiv = document.getElementById('riskScore');
+                riskDiv.innerHTML = `Risk Score: ${data.risk_assessment.risk_score || 0}`;
+
+                const factorsDiv = document.getElementById('riskFactors');
+                if (Array.isArray(data.risk_assessment.factors)) {
+                    factorsDiv.innerHTML = data.risk_assessment.factors.map(factor => 
+                        `<div class="p-2 bg-yellow-100 rounded">${factor}</div>`
+                    ).join('');
+                } else {
+                    factorsDiv.innerHTML = '';
+                }
+            }
+
+            // Update Transaction List
+            const transactionList = document.getElementById('transactionList');
+            if (Array.isArray(data.transactions)) {
+                transactionList.innerHTML = data.transactions.map(tx => `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">${new Date(tx.date).toLocaleDateString()}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${tx.type || 'N/A'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${tx.amount || '0'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${truncateAddress(tx.sender)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${truncateAddress(tx.destination)}</td>
+                    </tr>
+                `).join('');
+            } else {
+                transactionList.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center">No transactions found</td></tr>';
+            }
+
+            // Update Network Visualization
+            if (data.flows) {
+                updateNetworkVisualization(data.flows);
+            }
+        }
+
+        function updateNetworkVisualization(flows) {
+            const container = document.getElementById('network');
+            
+            const nodes = new Set();
+            const edges = [];
+            
+            function processFlows(flowArray, isIncoming = true) {
+                if (Array.isArray(flowArray)) {
+                    flowArray.forEach(flow => {
+                        const source = isIncoming ? flow.from : currentAddress;
+                        const target = isIncoming ? currentAddress : flow.to;
+                        
+                        if (source && target) {
+                            nodes.add(source);
+                            nodes.add(target);
+                            
+                            edges.push({
+                                from: source,
+                                to: target,
+                                arrows: 'to',
+                                value: parseFloat(flow.amount) || 1,
+                                title: `Amount: ${flow.amount || '0'} XRP`
+                            });
+                        }
+                    });
+                }
+            }
+            
+            processFlows(flows.incoming, true);
+            processFlows(flows.outgoing, false);
+
+            const nodesArray = Array.from(nodes).map(node => ({
+                id: node,
+                label: truncateAddress(node),
+                color: node === currentAddress ? '#4CAF50' : '#2196F3'
+            }));
+
+            // Create vis.js network
+            const data = {
+                nodes: new vis.DataSet(nodesArray),
+                edges: new vis.DataSet(edges)
+            };
+
+            const options = {
+                physics: {
+                    stabilization: true,
+                    barnesHut: {
+                        gravitationalConstant: -80000,
+                        springConstant: 0.001,
+                        springLength: 200
+                    }
+                },
+                layout: {
+                    improvedLayout: true
+                },
+                nodes: {
+                    shape: 'dot',
+                    size: 20,
+                    font: {
+                        size: 12
+                    },
+                    borderWidth: 2
+                },
+                edges: {
+                    width: 2,
+                    smooth: {
+                        type: 'continuous'
+                    }
+                }
+            };
+
+            if (network) {
+                network.destroy();
+            }
+            network = new vis.Network(container, data, options);
+        }
+
+        function truncateAddress(address) {
+            if (!address) return 'N/A';
+            return `${address.slice(0, 6)}...${address.slice(-4)}`;
+        }
+
+        async function exportData() {
+            if (!currentAddress) {
+                showError('No data to export');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/export/${currentAddress}`);
+                if (!response.ok) throw new Error('Export failed');
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${currentAddress}_transactions.csv`;
+                a.click();
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        function showLoading(show) {
+            document.getElementById('loadingIndicator').classList.toggle('hidden', !show);
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').classList.add('hidden');
+        }
+
+        function showResults() {
+            document.getElementById('resultsContainer').classList.remove('hidden');
+        }
+
+        function hideResults() {
+            document.getElementById('resultsContainer').classList.add('hidden');
+        }
+    </script>
 </body>
 </html>
