@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XRPolice Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #014AAD;
+            --primary-light: #0256c9;
+            --primary-lighter: #e6f0ff;
+            --primary-dark: #013a87;
+            --background: #f8fafc;
+            --card-bg: #ffffff;
+            --text-primary: #1a1f36;
+            --text-secondary: #64748b;
+            --success: #059669;
+            --warning: #b45309;
+            --danger: #dc2626;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            display: flex;
+            min-height: 100vh;
+            background: var(--background);
+            color: var(--text-primary);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--primary-color);
+            padding: 24px;
+            color: white;
+        }
+
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 32px;
+            padding: 16px;
+            background: white;
+            border-radius: 12px;
+        }
+
+        .logo-container img {
+            width: 180px;
+            height: 180px;
+            object-fit: contain;
+        }
+
+        .instance-list {
+            list-style: none;
+            margin-top: 24px;
+        }
+
+        .instance-list li {
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            color: white;
+        }
+
+        .instance-list li:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(4px);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 32px;
+            background: var(--background);
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-box {
+            display: flex;
+            gap: 12px;
+            width: 70%;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(1, 74, 173, 0.1);
+        }
+
+        .search-box button,
+        .logout-btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .search-box button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+        }
+
+        .search-box button:hover {
+            background: var(--primary-light);
+        }
+
+        .logout-btn {
+            background: transparent;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+        }
+
+        .logout-btn:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* Task Grid */
+        .task-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+            margin-top: 24px;
+        }
+
+        .task-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+        }
+
+        .task-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(1, 74, 173, 0.1);
+        }
+
+        .task-card h4 {
+            color: var(--primary-color);
+            margin-bottom: 12px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .task-card p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+
+        .task-card .actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .report-btn {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            padding: 8px;
+            border-radius: 6px;
+        }
+
+        .report-btn:hover {
+            background: var(--primary-lighter);
+        }
+
+        .status {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status.suspicious {
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        .status.analyzing {
+            background: #fef3c7;
+            color: var(--warning);
+        }
+
+        .status.confirmed {
+            background: #d1fae5;
+            color: var(--success);
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo-container">
+            <img src="C:\Users\kevin\Desktop\abc\XRPolice1\logo" alt="XRPolice Logo">
+        </div>
+        <ul class="instance-list">
+            <li>Instance #1234 - In Progress</li>
+            <li>Instance #5678 - Pending</li>
+            <li>Instance #9012 - Under Review</li>
+            <li>Instance #3456 - New</li>
+            <li>Instance #2454 - Closed</li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="header">
+            <div class="search-box">
+                <input type="text" placeholder="Enter Ripple hash to investigate...">
+                <button>Start Search</button>
+            </div>
+            <button class="logout-btn">Logout</button>
+        </div>
+
+        <div class="task-grid">
+            <div class="task-card">
+                <h4>Transaction #RF789</h4>
+                <p>Suspected fraudulent activity detected on Nov 22, 2024</p>
+                <div class="actions">
+                    <span class="status suspicious">Suspicious</span>
+                    <button class="report-btn" title="Report as fraudulent">
+                        <i class="fas fa-user-secret"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="task-card">
+                <h4>Transaction #RF790</h4>
+                <p>Anomaly pattern identified on Nov 21, 2024</p>
+                <div class="actions">
+                    <span class="status analyzing">Analyzing</span>
+                    <button class="report-btn" title="Report as fraudulent">
+                        <i class="fas fa-user-secret"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="task-card">
+                <h4>Transaction #RF791</h4>
+                <p>Suspicious transaction detected on Nov 20, 2024</p>
+                <div class="actions">
+                    <span class="status confirmed">Confirmed</span>
+                    <button class="report-btn" title="Report as fraudulent">
+                        <i class="fas fa-user-secret"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
