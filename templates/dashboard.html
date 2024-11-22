@@ -2,6 +2,8 @@
 <html>
 <head>
     <title>XRP Forensics Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <!-- Vis Network CSS -->
@@ -33,14 +35,17 @@
     <div class="container mx-auto px-4 py-8">
         <!-- Search Bar -->
         <div class="mb-8 bg-white p-6 rounded-lg shadow">
-            <div class="flex gap-4">
-                <input type="text" id="addressInput" 
-                       placeholder="Enter XRP Address" 
-                       class="flex-1 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <button onclick="analyzeAddress()" 
-                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded">
-                    Analyze
-                </button>
+            <div class="flex flex-col gap-4">
+                <p class="text-gray-600">Enter either a transaction hash (64 characters) or an XRP address (starting with 'r')</p>
+                <div class="flex gap-4">
+                    <input type="text" id="addressInput" 
+                           placeholder="Transaction Hash or XRP Address"
+                           class="flex-1 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button onclick="analyzeAddress()" 
+                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded">
+                        Analyze
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -108,7 +113,7 @@
         async function analyzeAddress() {
             const address = document.getElementById('addressInput').value.trim();
             if (!address) {
-                showError('Please enter an XRP address');
+                showError('Please enter a transaction hash or XRP address');
                 return;
             }
 
@@ -118,6 +123,7 @@
             hideResults();
 
             try {
+                console.log('Analyzing:', address);
                 const response = await fetch('/api/analyze', {
                     method: 'POST',
                     headers: {
@@ -131,9 +137,8 @@
                 }
 
                 const data = await response.json();
-                
-                console.log('Received data:', data);
-                
+                console.log('Response data:', data);
+
                 if (data.error) {
                     throw new Error(data.error);
                 }
@@ -154,7 +159,46 @@
                 return;
             }
 
-            // Update Risk Score
+            const transactionList = document.getElementById('transactionList');
+            
+            // Verifica se abbiamo transazioni
+            if (Array.isArray(data.transactions) && data.transactions.length > 0) {
+                const tx = data.transactions[0];  // Prendiamo la prima transazione
+                transactionList.innerHTML = `
+                    <tr class="bg-yellow-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            ${new Date(tx.date).toLocaleDateString()}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            ${tx.type || 'N/A'}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            ${tx.amount || '0'} ${tx.fee ? `(Fee: ${tx.fee})` : ''}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ${truncateAddress(tx.sender)}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ${truncateAddress(tx.destination)}
+                        </td>
+                    </tr>
+                `;
+            } else {
+                transactionList.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="px-6 py-4 text-center">
+                            No transaction found
+                        </td>
+                    </tr>
+                `;
+            }
+
+            // Update network visualization if we have flows
+            if (data.flows) {
+                updateNetworkVisualization(data.flows);
+            }
+
+            // Update risk assessment if available
             if (data.risk_assessment) {
                 const riskDiv = document.getElementById('riskScore');
                 riskDiv.innerHTML = `Risk Score: ${data.risk_assessment.risk_score || 0}`;
@@ -167,27 +211,6 @@
                 } else {
                     factorsDiv.innerHTML = '';
                 }
-            }
-
-            // Update Transaction List
-            const transactionList = document.getElementById('transactionList');
-            if (Array.isArray(data.transactions)) {
-                transactionList.innerHTML = data.transactions.map(tx => `
-                    <tr>
-                        <td class="px-6 py-4 whitespace-nowrap">${new Date(tx.date).toLocaleDateString()}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">${tx.type || 'N/A'}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">${tx.amount || '0'}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${truncateAddress(tx.sender)}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${truncateAddress(tx.destination)}</td>
-                    </tr>
-                `).join('');
-            } else {
-                transactionList.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center">No transactions found</td></tr>';
-            }
-
-            // Update Network Visualization
-            if (data.flows) {
-                updateNetworkVisualization(data.flows);
             }
         }
 
@@ -228,7 +251,6 @@
                 color: node === currentAddress ? '#4CAF50' : '#2196F3'
             }));
 
-            // Create vis.js network
             const data = {
                 nodes: new vis.DataSet(nodesArray),
                 edges: new vis.DataSet(edges)
@@ -273,28 +295,6 @@
             return `${address.slice(0, 6)}...${address.slice(-4)}`;
         }
 
-        async function exportData() {
-            if (!currentAddress) {
-                showError('No data to export');
-                return;
-            }
-
-            try {
-                const response = await fetch(`/api/export/${currentAddress}`);
-                if (!response.ok) throw new Error('Export failed');
-                
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${currentAddress}_transactions.csv`;
-                a.click();
-                window.URL.revokeObjectURL(url);
-            } catch (error) {
-                showError(error.message);
-            }
-        }
-
         function showLoading(show) {
             document.getElementById('loadingIndicator').classList.toggle('hidden', !show);
         }
@@ -315,6 +315,28 @@
 
         function hideResults() {
             document.getElementById('resultsContainer').classList.add('hidden');
+        }
+
+        async function exportData() {
+            if (!currentAddress) {
+                showError('No data to export');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/export/${currentAddress}`);
+                if (!response.ok) throw new Error('Export failed');
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${currentAddress}_transactions.csv`;
+                a.click();
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                showError(error.message);
+            }
         }
     </script>
 </body>
