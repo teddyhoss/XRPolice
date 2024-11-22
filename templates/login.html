@@ -394,7 +394,7 @@
     
     <div class="login-container">
         <h2>Login</h2>
-        <form>
+        <form action="{{ url_for('login') }}" method="POST">
             <div class="form-group">
                 <input type="email" id="email" name="email" placeholder=" " required>
                 <span>Email</span>
@@ -405,11 +405,21 @@
             </div>
             <div class="options-row">
                 <label class="stay-connected">
-                    <input type="checkbox">
+                    <input type="checkbox" name="remember">
                     Stay connected
                 </label>
                 <a href="#" class="forgot-password">Forgot password?</a>
             </div>
+            
+            <!-- Aggiungi questa sezione per mostrare eventuali errori -->
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="error-message" style="color: #FFB6C1; margin-bottom: 1rem; text-align: center;">
+                        {{ messages[0] }}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            
             <button type="submit">Sign In</button>
         </form>
     </div>
