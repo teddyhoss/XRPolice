@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .dashboard-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .logout-btn {
+            margin-top: 1rem;
+            background: #ff4444;
+        }
+        .logout-btn:hover {
+            background: #cc0000;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <h1>Benvenuto nella Dashboard</h1>
+        <p>Hai effettuato l'accesso con successo!</p>
+        <a href="{{ url_for('logout') }}"><button class="logout-btn">Logout</button></a>
+    </div>
+</body>
+</html>
