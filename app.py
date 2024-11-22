@@ -107,11 +107,15 @@ def login():
     email = request.form.get('email')
     password = request.form.get('password')
     
+    print(f"Login attempt - Email: {email}")  # Debug print
+    
     if email == 'admin@admin.com' and password == 'password':
         session['logged_in'] = True
+        print("Login successful")  # Debug print
         return redirect(url_for('dashboard'))
     else:
         flash('Credenziali non valide')
+        print("Login failed")  # Debug print
         return redirect(url_for('index'))
 
 @app.route('/dashboard')

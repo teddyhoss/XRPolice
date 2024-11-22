@@ -6,12 +6,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-    <!-- Vis Network CSS -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.6/dist/dist/vis-network.min.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.6/dist/dist/vis-network.min.css" rel="stylesheet">
     <!-- Scripts -->
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.6/dist/vis-network.min.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-data/7.1.6/vis-data.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.6/dist/vis-network.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-data/7.1.6/vis-data.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment"></script>
+    
+    <style>
+        .metric-card {
+            @apply bg-white rounded-lg shadow p-6;
+        }
+        .chart-container {
+            @apply bg-white rounded-lg shadow p-4 mb-6;
+            height: 300px;
+        }
+    </style>
 </head>
 <body class="bg-gray-100">
     <!-- Navbar -->
@@ -19,13 +30,10 @@
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
-                    <span class="text-xl font-semibold">XRP Forensics</span>
+                    <span class="text-xl font-bold text-blue-600">XRP Forensics</span>
                 </div>
-                <div class="flex items-center">
-                    <a href="{{ url_for('logout') }}" 
-                       class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
-                        Logout
-                    </a>
+                <div class="flex items-center space-x-4">
+                    <a href="{{ url_for('logout') }}" class="text-gray-600 hover:text-gray-900">Logout</a>
                 </div>
             </div>
         </div>
@@ -33,74 +41,76 @@
 
     <!-- Main Content -->
     <div class="container mx-auto px-4 py-8">
-        <!-- Search Bar -->
-        <div class="mb-8 bg-white p-6 rounded-lg shadow">
-            <div class="flex flex-col gap-4">
-                <p class="text-gray-600">Enter either a transaction hash (64 characters) or an XRP address (starting with 'r')</p>
+        <!-- Search Section -->
+        <div class="mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-bold mb-4">Transaction Analysis</h2>
                 <div class="flex gap-4">
                     <input type="text" id="addressInput" 
-                           placeholder="Transaction Hash or XRP Address"
-                           class="flex-1 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                           class="flex-1 p-2 border rounded"
+                           placeholder="Enter transaction hash">
                     <button onclick="analyzeAddress()" 
-                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded">
+                            class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">
                         Analyze
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- Loading Indicator -->
+        <!-- Loading & Error States -->
         <div id="loadingIndicator" class="hidden">
-            <div class="flex justify-center items-center mb-8">
+            <div class="flex justify-center items-center p-4">
                 <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                 <span class="ml-2">Analyzing...</span>
             </div>
         </div>
+        <div id="errorMessage" class="hidden bg-red-100 text-red-700 p-4 rounded mb-4"></div>
 
-        <!-- Error Message -->
-        <div id="errorMessage" class="hidden mb-8 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-        </div>
-
-        <!-- Analysis Results -->
+        <!-- Results Container -->
         <div id="resultsContainer" class="hidden">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Metrics Overview -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="metric-card">
+                    <h3 class="text-gray-500">Transaction Volume</h3>
+                    <p class="text-2xl font-bold" id="txVolume">-</p>
+                    <p class="text-sm text-gray-500">Last 24 hours</p>
+                </div>
+                <div class="metric-card">
+                    <h3 class="text-gray-500">Risk Assessment</h3>
+                    <p class="text-2xl font-bold" id="riskScore">-</p>
+                    <p class="text-sm text-gray-500">Current Assessment</p>
+                </div>
+                <div class="metric-card">
+                    <h3 class="text-gray-500">Connected Addresses</h3>
+                    <p class="text-2xl font-bold" id="connectedAddresses">-</p>
+                    <p class="text-sm text-gray-500">Direct Connections</p>
+                </div>
+            </div>
+
+            <!-- Analysis Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- Transaction Network -->
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <h2 class="text-xl font-semibold mb-4">Transaction Network</h2>
-                    <div id="network" class="h-96 border rounded"></div>
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-xl font-bold mb-4">Transaction Network</h2>
+                    <div id="network" style="height: 400px;"></div>
                 </div>
 
-                <!-- Risk Assessment -->
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <h2 class="text-xl font-semibold mb-4">Risk Assessment</h2>
-                    <div id="riskScore" class="text-3xl font-bold mb-4"></div>
-                    <div id="riskFactors" class="space-y-2"></div>
+                <!-- Transaction Timeline -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-xl font-bold mb-4">Transaction Timeline</h2>
+                    <div id="timeline" class="space-y-4"></div>
                 </div>
 
-                <!-- Transaction History -->
-                <div class="bg-white p-6 rounded-lg shadow col-span-1 md:col-span-2">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-xl font-semibold">Transaction History</h2>
-                        <button onclick="exportData()" 
-                                class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                            Export CSV
-                        </button>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead>
-                                <tr>
-                                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">From</th>
-                                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">To</th>
-                                </tr>
-                            </thead>
-                            <tbody id="transactionList" class="bg-white divide-y divide-gray-200">
-                            </tbody>
-                        </table>
-                    </div>
+                <!-- Risk Analysis -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-xl font-bold mb-4">Risk Analysis</h2>
+                    <div id="riskFactors" class="space-y-4"></div>
+                </div>
+
+                <!-- Transaction Patterns -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-xl font-bold mb-4">Transaction Patterns</h2>
+                    <div id="patterns" class="space-y-4"></div>
                 </div>
             </div>
         </div>
@@ -108,45 +118,36 @@
 
     <script>
         let currentAddress = '';
-        let network = null;
 
         async function analyzeAddress() {
             const address = document.getElementById('addressInput').value.trim();
             if (!address) {
-                showError('Please enter a transaction hash or XRP address');
+                showError('Please enter a transaction hash');
                 return;
             }
 
-            currentAddress = address;
-            showLoading(true);
             hideError();
+            showLoading(true);
             hideResults();
+            currentAddress = address;
 
             try {
-                console.log('Analyzing:', address);
                 const response = await fetch('/api/analyze', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ address })
+                    body: JSON.stringify({ address: address })
                 });
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
+                if (!response.ok) throw new Error('Network response was not ok');
                 const data = await response.json();
-                console.log('Response data:', data);
-
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-
+                
+                if (data.error) throw new Error(data.error);
+                
                 updateDashboard(data);
                 showResults();
             } catch (error) {
-                console.error('Error:', error);
                 showError(error.message);
             } finally {
                 showLoading(false);
@@ -154,109 +155,68 @@
         }
 
         function updateDashboard(data) {
-            if (!data || typeof data !== 'object') {
-                showError('Invalid data received from server');
-                return;
-            }
+            const tx = data.transactions[0] || {};
 
-            const transactionList = document.getElementById('transactionList');
-            
-            // Verifica se abbiamo transazioni
-            if (Array.isArray(data.transactions) && data.transactions.length > 0) {
-                const tx = data.transactions[0];  // Prendiamo la prima transazione
-                transactionList.innerHTML = `
-                    <tr class="bg-yellow-50">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            ${new Date(tx.date).toLocaleDateString()}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            ${tx.type || 'N/A'}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            ${tx.amount || '0'} ${tx.fee ? `(Fee: ${tx.fee})` : ''}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            ${truncateAddress(tx.sender)}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            ${truncateAddress(tx.destination)}
-                        </td>
-                    </tr>
-                `;
-            } else {
-                transactionList.innerHTML = `
-                    <tr>
-                        <td colspan="5" class="px-6 py-4 text-center">
-                            No transaction found
-                        </td>
-                    </tr>
-                `;
-            }
+            // Update metrics
+            document.getElementById('txVolume').textContent = tx.amount ? `${tx.amount} XRP` : '0 XRP';
+            document.getElementById('riskScore').textContent = `${data.risk_assessment?.risk_score || 0}/100`;
+            document.getElementById('connectedAddresses').textContent = 
+                (tx.sender && tx.destination) ? '2' : (tx.sender || tx.destination ? '1' : '0');
 
-            // Update network visualization if we have flows
-            if (data.flows) {
-                updateNetworkVisualization(data.flows);
-            }
+            // Update timeline
+            updateTimeline(tx);
 
-            // Update risk assessment if available
-            if (data.risk_assessment) {
-                const riskDiv = document.getElementById('riskScore');
-                riskDiv.innerHTML = `Risk Score: ${data.risk_assessment.risk_score || 0}`;
+            // Update network visualization
+            updateNetworkVisualization(tx);
 
-                const factorsDiv = document.getElementById('riskFactors');
-                if (Array.isArray(data.risk_assessment.factors)) {
-                    factorsDiv.innerHTML = data.risk_assessment.factors.map(factor => 
-                        `<div class="p-2 bg-yellow-100 rounded">${factor}</div>`
-                    ).join('');
-                } else {
-                    factorsDiv.innerHTML = '';
-                }
-            }
+            // Update risk analysis
+            updateRiskAnalysis(data.risk_assessment);
+
+            // Update patterns
+            updateTransactionPatterns(tx);
         }
 
-        function updateNetworkVisualization(flows) {
+        function updateTimeline(tx) {
+            const timeline = document.getElementById('timeline');
+            timeline.innerHTML = `
+                <div class="border-l-2 border-blue-500 pl-4">
+                    <div class="text-sm text-gray-500">${new Date(tx.date).toLocaleString()}</div>
+                    <div class="font-medium">${tx.type}</div>
+                    <div class="mt-1 text-sm">
+                        <div>From: ${truncateAddress(tx.sender)}</div>
+                        ${tx.destination ? `<div>To: ${truncateAddress(tx.destination)}</div>` : ''}
+                        <div>Amount: ${tx.amount || '0'} XRP</div>
+                        <div>Fee: ${tx.fee || '0'} XRP</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateNetworkVisualization(tx) {
             const container = document.getElementById('network');
             
-            const nodes = new Set();
-            const edges = [];
-            
-            function processFlows(flowArray, isIncoming = true) {
-                if (Array.isArray(flowArray)) {
-                    flowArray.forEach(flow => {
-                        const source = isIncoming ? flow.from : currentAddress;
-                        const target = isIncoming ? currentAddress : flow.to;
-                        
-                        if (source && target) {
-                            nodes.add(source);
-                            nodes.add(target);
-                            
-                            edges.push({
-                                from: source,
-                                to: target,
-                                arrows: 'to',
-                                value: parseFloat(flow.amount) || 1,
-                                title: `Amount: ${flow.amount || '0'} XRP`
-                            });
-                        }
-                    });
-                }
-            }
-            
-            processFlows(flows.incoming, true);
-            processFlows(flows.outgoing, false);
+            const nodes = new vis.DataSet([
+                { id: 1, label: truncateAddress(tx.sender), color: '#4CAF50' },
+                { id: 2, label: truncateAddress(tx.destination), color: '#2196F3' }
+            ]);
 
-            const nodesArray = Array.from(nodes).map(node => ({
-                id: node,
-                label: truncateAddress(node),
-                color: node === currentAddress ? '#4CAF50' : '#2196F3'
-            }));
-
-            const data = {
-                nodes: new vis.DataSet(nodesArray),
-                edges: new vis.DataSet(edges)
-            };
+            const edges = new vis.DataSet([
+                { from: 1, to: 2, arrows: 'to', title: `${tx.amount || '0'} XRP` }
+            ]);
 
             const options = {
+                nodes: {
+                    shape: 'dot',
+                    size: 30,
+                    font: { size: 14 },
+                    borderWidth: 2,
+                    shadow: true
+                },
+                edges: {
+                    width: 2,
+                    smooth: { type: 'continuous' },
+                    shadow: true
+                },
                 physics: {
                     stabilization: true,
                     barnesHut: {
@@ -264,35 +224,95 @@
                         springConstant: 0.001,
                         springLength: 200
                     }
-                },
-                layout: {
-                    improvedLayout: true
-                },
-                nodes: {
-                    shape: 'dot',
-                    size: 20,
-                    font: {
-                        size: 12
-                    },
-                    borderWidth: 2
-                },
-                edges: {
-                    width: 2,
-                    smooth: {
-                        type: 'continuous'
-                    }
                 }
             };
 
-            if (network) {
-                network.destroy();
-            }
-            network = new vis.Network(container, data, options);
+            new vis.Network(container, { nodes, edges }, options);
+        }
+
+        function updateRiskAnalysis(riskData) {
+            const riskFactors = document.getElementById('riskFactors');
+            const riskScore = riskData?.risk_score || 0;
+            
+            riskFactors.innerHTML = `
+                <div class="mb-4">
+                    <div class="text-2xl font-bold ${getRiskTextClass(riskScore)}">
+                        Risk Score: ${riskScore}/100
+                    </div>
+                    <div class="text-sm text-gray-500">
+                        Risk Level: ${getRiskLabel(riskScore)}
+                    </div>
+                </div>
+                ${generateRiskFactors(riskData)}
+            `;
+        }
+
+        function updateTransactionPatterns(tx) {
+            const patterns = document.getElementById('patterns');
+            patterns.innerHTML = `
+                <div class="grid gap-4">
+                    <div class="p-4 bg-gray-50 rounded">
+                        <h3 class="font-medium">Transaction Type</h3>
+                        <p class="text-sm text-gray-600 mt-1">${tx.type || 'Unknown'}</p>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded">
+                        <h3 class="font-medium">Volume Category</h3>
+                        <p class="text-sm text-gray-600 mt-1">${categorizeVolume(tx.amount)}</p>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded">
+                        <h3 class="font-medium">Processing Speed</h3>
+                        <p class="text-sm text-gray-600 mt-1">Standard</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Utility Functions
+        function generateRiskFactors(riskData) {
+            const defaultFactors = [
+                'Transaction volume analysis',
+                'Network pattern evaluation',
+                'Historical behavior assessment'
+            ];
+
+            const factors = riskData?.factors || defaultFactors;
+            return factors.map(factor => `
+                <div class="p-3 bg-gray-50 rounded flex items-center">
+                    <div class="w-2 h-2 rounded-full ${getRiskClass(riskData?.risk_score || 0)} mr-3"></div>
+                    <span class="text-sm">${factor}</span>
+                </div>
+            `).join('');
+        }
+
+        function categorizeVolume(amount) {
+            const value = parseFloat(amount) || 0;
+            if (value === 0) return 'No transfer';
+            if (value < 100) return 'Small transaction';
+            if (value < 1000) return 'Medium transaction';
+            return 'Large transaction';
         }
 
         function truncateAddress(address) {
-            if (!address) return 'N/A';
+            if (!address) return 'Unknown';
             return `${address.slice(0, 6)}...${address.slice(-4)}`;
+        }
+
+        function getRiskClass(risk) {
+            if (risk < 30) return 'bg-green-500';
+            if (risk < 70) return 'bg-yellow-500';
+            return 'bg-red-500';
+        }
+
+        function getRiskLabel(risk) {
+            if (risk < 30) return 'Low Risk';
+            if (risk < 70) return 'Medium Risk';
+            return 'High Risk';
+        }
+
+        function getRiskTextClass(risk) {
+            if (risk < 30) return 'text-green-600';
+            if (risk < 70) return 'text-yellow-600';
+            return 'text-red-600';
         }
 
         function showLoading(show) {
@@ -315,28 +335,6 @@
 
         function hideResults() {
             document.getElementById('resultsContainer').classList.add('hidden');
-        }
-
-        async function exportData() {
-            if (!currentAddress) {
-                showError('No data to export');
-                return;
-            }
-
-            try {
-                const response = await fetch(`/api/export/${currentAddress}`);
-                if (!response.ok) throw new Error('Export failed');
-                
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${currentAddress}_transactions.csv`;
-                a.click();
-                window.URL.revokeObjectURL(url);
-            } catch (error) {
-                showError(error.message);
-            }
         }
     </script>
 </body>

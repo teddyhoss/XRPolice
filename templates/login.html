@@ -25,8 +25,9 @@
             position: fixed;
             top: 20px;
             left: 20px;
-            width: 180px;
-            height: auto;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
             z-index: 1000;
         }
 
@@ -146,11 +147,15 @@
 </head>
 <body>
     <!-- Qui puoi inserire il percorso completo dell'immagine -->
-    <img src="{{ url_for('static', filename='images/logo.png') }}" class="logo" alt="XRPolice Logo">
+    <img src="{{ url_for('static', filename='images/logo.png') }}" 
+         class="logo" 
+         alt="XRPolice Logo"
+         onerror="this.style.display='none'"  <!-- Nasconde l'immagine se non viene trovata -->
+    >
     
     <div class="login-container">
         <h2>Login</h2>
-        <form>
+        <form action="{{ url_for('login') }}" method="POST">
             <div class="form-group">
                 <input type="email" id="email" name="email" placeholder=" " required>
                 <span>Email</span>
@@ -161,6 +166,13 @@
             </div>
             <button type="submit">Sign In</button>
         </form>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="mt-4 p-4 bg-red-100 text-red-700 rounded-lg">
+                    {{ messages[0] }}
+                </div>
+            {% endif %}
+        {% endwith %}
     </div>
 </body>
 </html>
