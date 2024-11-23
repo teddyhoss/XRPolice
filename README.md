@@ -78,16 +78,6 @@ An interactive dashboard for XRP transaction forensic analysis, enabling trackin
 4. Analyze behavioral patterns
 5. Evaluate risk score and network metrics
 
-## 📝 Notes
-- System is continuously updated
-- Analyses are based on on-chain data
-- Risk score is calculated using multiple parameters
-
-## 🤝 Contributing
-We welcome contributions and suggestions to improve the platform.
-
-## 📄 License
-[Insert license type]
 
 ## 🔧 Technical Requirements
 - Node.js
@@ -100,36 +90,3 @@ We welcome contributions and suggestions to improve the platform.
 - Custom risk scoring API
 - Entity classification service
 
-## 💻 Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/xrp-forensics-dashboard.git
-
-# Install dependencies
-npm install
-
-# Run the development server
-npm run dev
-
-# Build for production
-npm run build
-```
-
-## 🔐 Environment Variables
-
-Create a `.env` file in the root directory:
-
-```env
-API_KEY=your_api_key
-API_URL=your_api_url
-```
-
-## 📚 Documentation
-For detailed documentation, please visit [documentation link]
-
-## 🤝 Support
-For support, please email [support email]
-
-## 🔄 Updates
-The dashboard is regularly updated with new features and improvements. Check the changelog for recent updates.
