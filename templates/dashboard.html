@@ -113,109 +113,185 @@
             background: #FEF3C7;
             color: #92400E;
         }
+
+        .tool-button {
+            @apply px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-sm;
+        }
+
+        .search-item {
+            @apply p-3 bg-white rounded-lg border hover:shadow-md cursor-pointer transition-all;
+        }
+
+        .search-item.active {
+            @apply border-blue-500 shadow-md;
+        }
+
+        .node {
+            @apply cursor-pointer;
+        }
+
+        .edge {
+            @apply stroke-2;
+        }
     </style>
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 </head>
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="p-6">
-            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="h-8">
-        </div>
-        
-        <div class="space-y-2">
-            <a href="#" class="sidebar-item active">
-                <svg class="sidebar-icon" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-                </svg>
-                Blockchain
-            </a>
-            <a href="#" class="sidebar-item">
-                <svg class="sidebar-icon" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                </svg>
-                Tokens
-            </a>
-            <!-- Altri elementi della sidebar -->
+    <!-- Vista selezione investigazione -->
+    <div id="investigationSelector" class="fixed inset-0 bg-gray-100 z-50">
+        <div class="max-w-4xl mx-auto pt-12 px-4">
+            <div class="flex justify-between items-center mb-8">
+                <h1 class="text-3xl font-bold">XRP Forensics Dashboard</h1>
+                <button onclick="showNewInvestigationModal()" 
+                        class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    New Investigation
+                </button>
+            </div>
+            
+            <div id="investigationList" class="bg-white rounded-lg shadow-lg p-6">
+                <!-- Le investigazioni verranno caricate qui -->
+            </div>
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <!-- Search Bar -->
-        <div class="flex items-center mb-8">
-            <input type="text" 
-                   id="addressInput"
-                   class="search-bar"
-                   placeholder="Search by addresses / transactions / block / token ...">
-            <button id="searchButton"
-                    class="ml-4 bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600">
-                Search
-            </button>
-        </div>
-
-        <!-- Loading & Error States -->
-        <div id="loadingIndicator" class="hidden">
-            <div class="flex justify-center items-center p-4">
-                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                <span class="ml-2">Analyzing...</span>
+    <!-- Dashboard principale -->
+    <div id="mainDashboard" class="hidden">
+        <!-- Header con tasto back -->
+        <div class="bg-white shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <button onclick="backToSelection()" 
+                                class="bg-gray-100 text-gray-700 px-4 py-2 rounded hover:bg-gray-200 flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                            </svg>
+                            Back to Investigations
+                        </button>
+                        <h2 id="currentInvestigationName" class="text-xl font-bold">Investigation Name</h2>
+                    </div>
+                    <div class="text-sm text-gray-500" id="investigationDate"></div>
+                </div>
             </div>
         </div>
-        <div id="errorMessage" class="hidden bg-red-100 text-red-700 p-4 rounded-lg mb-4"></div>
 
-        <!-- Results Container -->
-        <div id="resultsContainer" class="hidden">
-            <!-- Transaction Overview -->
-            <div class="card">
-                <h2 class="text-xl font-semibold mb-4">Transaction Overview</h2>
-                <div class="grid grid-cols-3 gap-6">
-                    <div>
-                        <div class="text-sm text-gray-500">Hash</div>
-                        <div class="font-medium" id="txHash">-</div>
-                    </div>
-                    <div>
-                        <div class="text-sm text-gray-500">Status</div>
-                        <div class="font-medium" id="txStatus">-</div>
-                    </div>
-                    <div>
-                        <div class="text-sm text-gray-500">Timestamp</div>
-                        <div class="font-medium" id="txTimestamp">-</div>
-                    </div>
+        <!-- Resto della dashboard -->
+        <div class="main-content">
+            <!-- Header con nome investigazione e tasto back -->
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex items-center space-x-4">
+                    <button onclick="backToSelection()" 
+                            class="bg-gray-100 text-gray-700 px-4 py-2 rounded hover:bg-gray-200">
+                        ← Back
+                    </button>
+                    <h1 id="currentInvestigationName" class="text-2xl font-bold">Investigation Name</h1>
                 </div>
             </div>
 
-            <!-- Transaction Details -->
-            <div class="card">
-                <h2 class="text-xl font-semibold mb-4">Transaction Details</h2>
-                <div class="space-y-4">
-                    <div class="flex justify-between items-center py-3 border-b">
-                        <div class="text-gray-500">From</div>
-                        <div class="font-medium" id="txFrom">-</div>
-                    </div>
-                    <div class="flex justify-between items-center py-3 border-b">
-                        <div class="text-gray-500">To</div>
-                        <div class="font-medium" id="txTo">-</div>
-                    </div>
-                    <div class="flex justify-between items-center py-3 border-b">
-                        <div class="text-gray-500">Value</div>
-                        <div class="font-medium" id="txValue">-</div>
-                    </div>
-                    <div class="flex justify-between items-center py-3">
-                        <div class="text-gray-500">Transaction Fee</div>
-                        <div class="font-medium" id="txFee">-</div>
-                    </div>
+            <!-- Barra di ricerca e analisi -->
+            <div class="card mb-6">
+                <div class="flex space-x-4">
+                    <input type="text" 
+                           id="addressInput" 
+                           class="flex-1 p-2 border rounded" 
+                           placeholder="Enter XRP address to analyze">
+                    <button onclick="analyzeAddress()" 
+                            class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">
+                        Analyze
+                    </button>
                 </div>
             </div>
 
-            <!-- Risk Analysis -->
-            <div class="card">
-                <h2 class="text-xl font-semibold mb-4">Risk Analysis</h2>
-                <div id="riskFactors" class="space-y-4"></div>
-            </div>
+            <!-- Contenuto principale -->
+            <div class="grid grid-cols-12 gap-6">
+                <!-- Grafo -->
+                <div class="col-span-8">
+                    <div class="card">
+                        <h2 class="text-xl font-semibold mb-4">Transaction Graph</h2>
+                        <div id="graph-container" style="height: 600px;"></div>
+                        <div class="absolute bottom-4 right-4 flex space-x-2">
+                            <button onclick="zoomIn()" class="p-2 bg-white rounded-full shadow hover:bg-gray-50">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                            </button>
+                            <button onclick="zoomOut()" class="p-2 bg-white rounded-full shadow hover:bg-gray-50">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                                </svg>
+                            </button>
+                            <button onclick="fitGraph()" class="p-2 bg-white rounded-full shadow hover:bg-gray-50">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
-            <!-- Transaction Network -->
-            <div class="card">
-                <h2 class="text-xl font-semibold mb-4">Transaction Network</h2>
-                <div id="network" style="height: 400px;"></div>
+                <!-- Sidebar destra -->
+                <div class="col-span-4">
+                    <!-- Lista delle ricerche effettuate -->
+                    <div class="card mb-6">
+                        <h2 class="text-lg font-semibold mb-4">Search History</h2>
+                        <div id="searchList" class="space-y-3">
+                            <!-- Le ricerche verranno inserite qui -->
+                        </div>
+                    </div>
+
+                    <!-- Dettagli nodo selezionato -->
+                    <div class="card">
+                        <h2 class="text-lg font-semibold mb-4">Address Details</h2>
+                        <div id="nodeDetails" class="text-sm">
+                            Select an address in the graph to see details
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aggiungi questo modal subito dopo l'apertura del tag body -->
+    <div id="newInvestigationModal" class="hidden fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Create New Investigation</h3>
+                    <button onclick="closeNewInvestigationModal()" class="text-gray-400 hover:text-gray-500">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="mt-2">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                        <input type="text" 
+                               id="investigationName" 
+                               class="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500" 
+                               placeholder="Enter investigation name">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea id="investigationDescription" 
+                                  class="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500" 
+                                  rows="3"
+                                  placeholder="Enter investigation description"></textarea>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button onclick="closeNewInvestigationModal()" 
+                                class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">
+                            Cancel
+                        </button>
+                        <button onclick="createInvestigation()" 
+                                class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                            Create
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -226,239 +302,475 @@
     
     <!-- Il resto del tuo JavaScript esistente con gli aggiornamenti per il nuovo layout -->
     <script>
-    // Attendi che il DOM sia completamente caricato
-    document.addEventListener('DOMContentLoaded', function() {
-        // Inizializza le variabili globali
-        let currentAddress = '';
-        let network = null;
+    // Definisci le variabili globali all'inizio
+    let currentInvestigation = null;
+    let network = null;
+    let nodes = null;
+    let edges = null;
 
-        // Aggiungi l'event listener al bottone
-        document.getElementById('searchButton').addEventListener('click', analyzeAddress);
-
-        async function analyzeAddress() {
-            const address = document.getElementById('addressInput').value.trim();
-            if (!address) {
-                showError('Please enter a transaction hash');
-                return;
-            }
-
-            hideError();
-            showLoading(true);
-            currentAddress = address;
-
-            try {
-                const response = await fetch('/api/analyze', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ address: address })
-                });
-
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
+    // Funzione per inizializzare il grafo
+    function initGraph() {
+        // Inizializza i dataset
+        nodes = new vis.DataSet();
+        edges = new vis.DataSet();
+        
+        const container = document.getElementById('graph-container');
+        const options = {
+            nodes: {
+                shape: 'dot',
+                size: 30,
+                font: {
+                    size: 14
                 }
-
-                const data = await response.json();
-                if (data.error) {
-                    throw new Error(data.error);
+            },
+            edges: {
+                width: 2,
+                arrows: {
+                    to: { enabled: true }
                 }
-
-                updateDashboard(data);
-                showResults();
-
-            } catch (error) {
-                console.error('Error:', error);
-                showError(error.message);
-                hideResults();
-            } finally {
-                showLoading(false);
+            },
+            physics: {
+                stabilization: false,
+                barnesHut: {
+                    gravitationalConstant: -80000,
+                    springConstant: 0.001,
+                    springLength: 200
+                }
             }
-        }
+        };
 
-        // Aggiungi anche l'event listener per la ricerca con il tasto Enter
-        document.getElementById('addressInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                analyzeAddress();
+        network = new vis.Network(container, { nodes, edges }, options);
+        
+        // Aggiungi event listener per il grafo
+        network.on('selectNode', function(params) {
+            if (params.nodes.length > 0) {
+                const nodeId = params.nodes[0];
+                showNodeDetails(nodeId);
             }
         });
+    }
 
-        function updateDashboard(data) {
-            if (!data || typeof data !== 'object') {
-                showError('Invalid data received from server');
+    // Funzione per troncare gli indirizzi
+    function truncateAddress(address) {
+        if (!address) return '';
+        return address.substring(0, 6) + '...' + address.substring(address.length - 4);
+    }
+
+    // Funzione per analizzare un indirizzo
+    async function analyzeAddress() {
+        const addressInput = document.getElementById('addressInput');
+        const address = addressInput.value.trim();
+        if (!address) {
+            showError('Please enter an address');
+            return;
+        }
+
+        const analyzeButton = document.querySelector('button[onclick="analyzeAddress()"]');
+        const originalText = analyzeButton.textContent;
+
+        try {
+            // Mostra loading state
+            analyzeButton.disabled = true;
+            analyzeButton.textContent = 'Analyzing...';
+
+            const response = await fetch('/api/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    investigation_id: currentInvestigation.id,
+                    address: address
+                })
+            });
+
+            if (!response.ok) throw new Error('Analysis failed');
+            
+            const data = await response.json();
+            
+            // Aggiungi il nodo al grafo
+            addNodeToGraph(data);
+            
+            // Aggiungi alla lista delle ricerche
+            addSearchToList({
+                address: address,
+                timestamp: new Date().toISOString(),
+                data: data
+            });
+
+            // Pulisci l'input
+            addressInput.value = '';
+            
+            showSuccess('Address analyzed successfully');
+        } catch (error) {
+            console.error('Error analyzing address:', error);
+            showError('Failed to analyze address');
+        } finally {
+            // Ripristina il bottone
+            analyzeButton.disabled = false;
+            analyzeButton.textContent = originalText;
+        }
+    }
+
+    // Funzione per selezionare un'investigazione
+    function selectInvestigation(investigation) {
+        currentInvestigation = investigation;
+        
+        // Aggiorna l'UI
+        document.getElementById('currentInvestigationName').textContent = investigation.name;
+        
+        // Nascondi il selettore e mostra la dashboard
+        document.getElementById('investigationSelector').classList.add('hidden');
+        document.getElementById('mainDashboard').classList.remove('hidden');
+        
+        // Inizializza o pulisci il grafo
+        if (!network) {
+            initGraph();
+        } else {
+            clearGraph();
+        }
+        
+        // Carica i dati dell'investigazione
+        loadInvestigationData(investigation.id);
+    }
+
+    // Funzioni per il modal
+    function showNewInvestigationModal() {
+        const modal = document.getElementById('newInvestigationModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+        } else {
+            console.error('Modal element not found');
+        }
+    }
+
+    function closeNewInvestigationModal() {
+        const modal = document.getElementById('newInvestigationModal');
+        if (modal) {
+            modal.classList.add('hidden');
+            document.getElementById('investigationName').value = '';
+            document.getElementById('investigationDescription').value = '';
+        }
+    }
+
+    // Funzione per caricare le investigazioni
+    async function loadInvestigations() {
+        try {
+            const response = await fetch('/api/investigations');
+            if (!response.ok) throw new Error('Failed to fetch investigations');
+            
+            const investigations = await response.json();
+            const investigationList = document.getElementById('investigationList');
+            investigationList.innerHTML = '';
+            
+            if (investigations.length === 0) {
+                investigationList.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <p class="mb-4">No investigations found</p>
+                        <button onclick="showNewInvestigationModal()" 
+                                class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">
+                            Create Your First Investigation
+                        </button>
+                    </div>
+                `;
                 return;
             }
-
-            const tx = data.transactions[0] || {};
-
-            // Aggiorna Transaction Overview
-            document.getElementById('txHash').textContent = tx.hash || '-';
-            document.getElementById('txStatus').innerHTML = getStatusBadge(tx.result || 'unknown');
-            document.getElementById('txTimestamp').textContent = formatDate(tx.date);
-
-            // Aggiorna Transaction Details
-            document.getElementById('txFrom').textContent = tx.sender || '-';
-            document.getElementById('txTo').textContent = tx.destination || '-';
-            document.getElementById('txValue').textContent = formatAmount(tx.amount);
-            document.getElementById('txFee').textContent = formatAmount(tx.fee);
-
-            // Aggiorna Risk Analysis
-            updateRiskAnalysis(data.risk_assessment);
-
-            // Aggiorna Transaction Network
-            updateNetworkVisualization(data.flows, tx);
-        }
-
-        function updateRiskAnalysis(riskData) {
-            const riskFactors = document.getElementById('riskFactors');
-            const riskScore = riskData?.risk_score || 0;
             
-            riskFactors.innerHTML = `
-                <div class="mb-6">
-                    <div class="text-3xl font-bold ${getRiskTextClass(riskScore)}">
-                        Risk Score: ${riskScore}/100
+            investigations.forEach(inv => {
+                const item = document.createElement('div');
+                item.className = 'bg-white border rounded-lg p-4 hover:shadow-md transition-all cursor-pointer mb-4';
+                item.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="font-medium text-lg">${inv.name}</h3>
+                            <p class="text-sm text-gray-500">${new Date(inv.created_at).toLocaleString()}</p>
+                            ${inv.description ? `<p class="text-gray-600 mt-2">${inv.description}</p>` : ''}
+                        </div>
+                        <button class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                            Select
+                        </button>
                     </div>
-                    <div class="mt-2 text-sm text-gray-600">
-                        Risk Level: ${getRiskLabel(riskScore)}
-                    </div>
-                </div>
-                <div class="space-y-3">
-                    ${generateRiskFactors(riskData)}
-                </div>
-            `;
+                `;
+                item.onclick = () => selectInvestigation(inv);
+                investigationList.appendChild(item);
+            });
+        } catch (error) {
+            console.error('Error loading investigations:', error);
+            showError('Failed to load investigations');
         }
+    }
 
-        function updateNetworkVisualization(flows, tx) {
-            const container = document.getElementById('network');
-            if (!container) return;
-
-            // Crea nodi base per la transazione
-            const nodes = new vis.DataSet([
-                { id: 1, label: truncateAddress(tx.sender), color: '#4CAF50', title: tx.sender },
-                { id: 2, label: truncateAddress(tx.destination), color: '#2196F3', title: tx.destination }
-            ]);
-
-            const edges = new vis.DataSet([
-                { 
-                    from: 1, 
-                    to: 2, 
-                    arrows: 'to', 
-                    title: `${formatAmount(tx.amount)}`,
-                    color: { color: '#64748B' }
-                }
-            ]);
-
-            const options = {
-                nodes: {
-                    shape: 'dot',
-                    size: 30,
-                    font: { size: 14 },
-                    borderWidth: 2,
-                    shadow: true
+    // Funzione per creare una nuova investigazione
+    async function createInvestigation() {
+        const name = document.getElementById('investigationName').value.trim();
+        const description = document.getElementById('investigationDescription').value.trim();
+        
+        if (!name) {
+            showError('Please enter an investigation name');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/investigations', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
                 },
-                edges: {
-                    width: 2,
-                    smooth: { type: 'continuous' },
-                    shadow: true
-                },
-                physics: {
-                    stabilization: true,
-                    barnesHut: {
-                        gravitationalConstant: -80000,
-                        springConstant: 0.001,
-                        springLength: 200
-                    }
-                }
-            };
-
-            if (network) {
-                network.destroy();
-            }
-            network = new vis.Network(container, { nodes, edges }, options);
+                body: JSON.stringify({ name, description })
+            });
+            
+            if (!response.ok) throw new Error('Failed to create investigation');
+            
+            const investigation = await response.json();
+            closeNewInvestigationModal();
+            await loadInvestigations();
+            showSuccess('Investigation created successfully');
+        } catch (error) {
+            console.error('Error creating investigation:', error);
+            showError('Failed to create investigation');
         }
+    }
 
-        // Utility Functions
-        function formatDate(dateString) {
-            if (!dateString) return '-';
-            return new Date(dateString).toLocaleString();
-        }
+    // Funzione per mostrare messaggi di successo
+    function showSuccess(message) {
+        const successDiv = document.createElement('div');
+        successDiv.className = 'fixed top-4 right-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-lg z-50';
+        successDiv.textContent = message;
+        document.body.appendChild(successDiv);
+        setTimeout(() => successDiv.remove(), 3000);
+    }
 
-        function formatAmount(amount) {
-            if (!amount) return '0 XRP';
-            return `${amount} XRP`;
-        }
+    // Funzione per mostrare errori
+    function showError(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'fixed top-4 right-4 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-lg z-50';
+        errorDiv.textContent = message;
+        document.body.appendChild(errorDiv);
+        setTimeout(() => errorDiv.remove(), 3000);
+    }
 
-        function getStatusBadge(status) {
-            const isSuccess = status.toLowerCase() === 'tessuccess';
-            return `
-                <span class="badge ${isSuccess ? 'badge-success' : 'badge-warning'}">
-                    ${status}
-                </span>
-            `;
-        }
-
-        function generateRiskFactors(riskData) {
-            const defaultFactors = [
-                'Transaction pattern analysis',
-                'Network behavior evaluation',
-                'Historical activity assessment',
-                'Volume analysis'
-            ];
-
-            const factors = riskData?.factors || defaultFactors;
-            return factors.map(factor => `
-                <div class="p-3 bg-gray-50 rounded-lg flex items-center">
-                    <div class="w-2 h-2 rounded-full ${getRiskClass(riskData?.risk_score || 0)} mr-3"></div>
-                    <span class="text-sm">${factor}</span>
-                </div>
-            `).join('');
-        }
-
-        function getRiskClass(risk) {
-            if (risk < 30) return 'bg-green-500';
-            if (risk < 70) return 'bg-yellow-500';
-            return 'bg-red-500';
-        }
-
-        function getRiskLabel(risk) {
-            if (risk < 30) return 'Low Risk';
-            if (risk < 70) return 'Medium Risk';
-            return 'High Risk';
-        }
-
-        function getRiskTextClass(risk) {
-            if (risk < 30) return 'text-green-600';
-            if (risk < 70) return 'text-yellow-600';
-            return 'text-red-600';
-        }
-
-        function truncateAddress(address) {
-            if (!address) return 'Unknown';
-            return `${address.slice(0, 6)}...${address.slice(-4)}`;
-        }
-
-        function showLoading(show) {
-            document.getElementById('loadingIndicator').classList.toggle('hidden', !show);
-        }
-
-        function showError(message) {
-            const errorDiv = document.getElementById('errorMessage');
-            errorDiv.textContent = message;
-            errorDiv.classList.remove('hidden');
-        }
-
-        function hideError() {
-            document.getElementById('errorMessage').classList.add('hidden');
-        }
-
-        function showResults() {
-            document.getElementById('resultsContainer').classList.remove('hidden');
-        }
-
-        function hideResults() {
-            document.getElementById('resultsContainer').classList.add('hidden');
-        }
+    // Inizializza quando il documento è pronto
+    document.addEventListener('DOMContentLoaded', function() {
+        loadInvestigations();
     });
+
+    async function loadInvestigationData(investigationId) {
+        try {
+            const response = await fetch(`/api/investigations/${investigationId}`);
+            if (!response.ok) throw new Error('Failed to load investigation data');
+            
+            const data = await response.json();
+            
+            // Pulisci il grafo esistente
+            clearGraph();
+            
+            // Carica i dati salvati dell'investigazione
+            if (data.searches && data.searches.length > 0) {
+                data.searches.forEach(search => {
+                    addNodeToGraph(search.data);
+                    addSearchToList(search);
+                });
+            }
+            
+            // Aggiorna la UI con i dati dell'investigazione
+            updateDashboardUI(data);
+            
+        } catch (error) {
+            console.error('Error loading investigation data:', error);
+            showError('Failed to load investigation data');
+        }
+    }
+
+    function updateDashboardUI(data) {
+        // Aggiorna il titolo
+        document.getElementById('currentInvestigationName').textContent = data.name;
+        
+        // Aggiorna altri elementi della dashboard se necessario
+        // Per esempio, la lista delle ricerche, statistiche, ecc.
+    }
+
+    function backToSelection() {
+        // Pulisci lo stato corrente
+        currentInvestigation = null;
+        
+        // Pulisci il grafo se esiste
+        if (network) {
+            nodes.clear();
+            edges.clear();
+        }
+        
+        // Nascondi la dashboard e mostra il selettore
+        document.getElementById('mainDashboard').classList.add('hidden');
+        document.getElementById('investigationSelector').classList.remove('hidden');
+        
+        // Ricarica le investigazioni
+        loadInvestigations();
+    }
+
+    function addNodeToGraph(data) {
+        try {
+            // Controlla se il nodo principale esiste già
+            if (!nodes.get(data.address)) {
+                nodes.add({
+                    id: data.address,
+                    label: truncateAddress(data.address),
+                    title: data.address,
+                    color: '#4CAF50'
+                });
+            }
+
+            // Aggiungi le transazioni come edges
+            if (data.transactions) {
+                data.transactions.forEach(tx => {
+                    // Controlla se il nodo della controparte esiste già
+                    if (!nodes.get(tx.counterparty)) {
+                        nodes.add({
+                            id: tx.counterparty,
+                            label: truncateAddress(tx.counterparty),
+                            title: tx.counterparty,
+                            color: '#2196F3'
+                        });
+                    }
+
+                    // Crea un ID unico per l'edge
+                    const edgeId = `${tx.from}_${tx.to}_${tx.timestamp}`;
+                    
+                    // Controlla se l'edge esiste già
+                    if (!edges.get(edgeId)) {
+                        edges.add({
+                            id: edgeId,
+                            from: tx.from,
+                            to: tx.to,
+                            title: `${tx.amount} XRP\n${new Date(tx.timestamp).toLocaleString()}`,
+                            arrows: 'to'
+                        });
+                    }
+                });
+            }
+
+            // Centra il grafo sul nuovo nodo
+            network.fit();
+            
+            // Evidenzia il nodo appena analizzato
+            network.selectNodes([data.address]);
+            
+        } catch (error) {
+            console.error('Error adding node to graph:', error);
+            showError('Failed to update graph visualization');
+        }
+    }
+
+    function addSearchToList(search) {
+        const searchList = document.getElementById('searchList');
+        const searchItem = document.createElement('div');
+        searchItem.className = 'search-item p-3 bg-white rounded-lg border hover:shadow-md';
+        searchItem.innerHTML = `
+            <div class="flex justify-between items-start">
+                <div>
+                    <div class="font-medium">${truncateAddress(search.address)}</div>
+                    <div class="text-sm text-gray-500">${new Date(search.timestamp).toLocaleString()}</div>
+                </div>
+                <button onclick="focusNode('${search.address}')" 
+                        class="text-blue-500 hover:text-blue-600">
+                    Focus
+                </button>
+            </div>
+        `;
+        searchList.prepend(searchItem);
+    }
+
+    function focusNode(address) {
+        network.focus(address, {
+            scale: 1.5,
+            animation: true
+        });
+        network.selectNodes([address]);
+    }
+
+    function showNodeDetails(nodeId) {
+        const detailsDiv = document.getElementById('nodeDetails');
+        detailsDiv.innerHTML = `
+            <div>
+                <span class="font-medium">Address:</span>
+                <span class="text-gray-600">${nodeId}</span>
+            </div>
+            <div>
+                <button onclick="copyToClipboard('${nodeId}')" 
+                        class="text-blue-500 hover:text-blue-600">
+                    Copy
+                </button>
+            </div>
+        `;
+    }
+
+    // Aggiungi anche questa funzione di utilità per pulire il grafo
+    function clearGraph() {
+        if (nodes && edges) {
+            nodes.clear();
+            edges.clear();
+        }
+    }
+
+    // Aggiungi queste funzioni per il controllo dello zoom
+    function zoomIn() {
+        network.moveTo({
+            scale: network.getScale() * 1.2
+        });
+    }
+
+    function zoomOut() {
+        network.moveTo({
+            scale: network.getScale() / 1.2
+        });
+    }
+
+    function fitGraph() {
+        network.fit({
+            animation: true
+        });
+    }
     </script>
+
+    <!-- Modal per creare nuova investigazione -->
+    <div id="newInvestigationModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Create New Investigation</h3>
+                    <button onclick="closeNewInvestigationModal()" class="text-gray-400 hover:text-gray-500">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="mt-2">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">Name</label>
+                        <input type="text" 
+                               id="investigationName" 
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" 
+                               placeholder="Enter investigation name">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">Description</label>
+                        <textarea id="investigationDescription" 
+                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" 
+                                  rows="3"
+                                  placeholder="Enter investigation description"></textarea>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button onclick="closeNewInvestigationModal()" 
+                                class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">
+                            Cancel
+                        </button>
+                        <button onclick="createInvestigation()" 
+                                class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                            Create
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
